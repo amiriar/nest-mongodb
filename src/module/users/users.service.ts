@@ -1,16 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
+import { Otp, OtpDocument } from 'src/otherEntities/Otp.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
-
-  async create(createUserDto: any): Promise<User> {
-    const createdUser = new this.userModel(createUserDto);
-    return createdUser.save();
-  }
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Otp.name) private otpModel: Model<OtpDocument>,
+  ) {}
 
   async findAll(): Promise<User[]> {
     return this.userModel.find().exec();
@@ -20,13 +19,62 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
-  async update(id: string, updateUserDto: any): Promise<User> {
-    return this.userModel
-      .findByIdAndUpdate(id, updateUserDto, { new: true })
-      .exec();
+  async findOneByPhone(phone: string): Promise<User> {
+    return this.userModel.findOne({ phoneNumber: phone }).exec();
   }
 
-  async delete(id: string): Promise<User> {
-    return this.userModel.findOneAndDelete({ id }).exec();
+  async findOneByEmail(email: string): Promise<User> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async createUser(phone: string, madeIn: string): Promise<User> {
+    return this.userModel.create({ phoneNumber: phone, madeIn });
+  }
+
+  async saveUser(user: User): Promise<User> {
+    // @ts-ignore
+    return this.userModel.findByIdAndUpdate(user._id, user, { new: true }).exec();
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const result = await this.userModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      throw new NotFoundException('User not found');
+    }
+  }
+
+  // OTP
+
+  generateOtp(): string {
+    return Math.floor(10000 + Math.random() * 90000).toString();
+  }
+
+  async saveOtp(userId: string, otp: string): Promise<Otp> {
+    const user = await this.userModel.findById(userId);
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const expirationTime = new Date();
+    expirationTime.setMinutes(expirationTime.getMinutes() + 2); // Set OTP expiration to 2 minutes
+
+    const newOtp = new this.otpModel({
+      otp,
+      user: user._id,
+      expiresAt: expirationTime,
+    });
+
+    user.otp = otp;
+    user.otpExpiresAt = expirationTime;
+  
+    await user.save();
+
+    return newOtp.save();
+  }
+
+  async sendOtpToPhone(phone: string, otp: string): Promise<void> {
+    // Send OTP to the phone number using an SMS service
+    // Implement SMS service integration here
   }
 }

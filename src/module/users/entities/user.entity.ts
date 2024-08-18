@@ -5,16 +5,13 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ required: false })
-  firstname: string;
+  // @Prop({ type: String, required: false, unique: true })
+  // id: string;
 
   @Prop({ required: false })
-  lastname: string;
-
-  @Prop({ required: false, unique: true })
   username: string;
 
-  @Prop({ required: false, unique: true })
+  @Prop({ required: false })
   email: string;
 
   @Prop({ required: false })
@@ -23,11 +20,26 @@ export class User {
   @Prop({ required: true })
   phoneNumber: string;
 
-  @Prop({ default: null })
+  @Prop({ required: false })
   profile: string;
 
+  @Prop({ default: "USER" })
+  role: string;
+  
   @Prop({ required: false })
   lastDateIn: string;
+
+  @Prop({ required: false })
+  otp: string;
+
+  @Prop({ required: false })
+  otpExpiresAt: Date;
+
+  @Prop({ required: false })
+  refreshToken: string;
+  
+  @Prop({ required: false })
+  refreshTokenExpiresAt: Date;
   
   @Prop({ default: Date.now })
   createdAt: Date;
