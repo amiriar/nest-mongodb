@@ -5,7 +5,6 @@ import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
 import * as dayjs from 'dayjs';
 import * as jalaliday from 'jalaliday';
-import { RefreshTokenInterceptor } from 'src/interceptors/Auth.interceptor';
 dayjs.extend(jalaliday);
 
 @ApiTags('users')
@@ -23,7 +22,6 @@ export class UsersController {
   // }
 
   @Get()
-  @UseInterceptors(RefreshTokenInterceptor)
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'List of all users.', type: [User] })
   async findAll(): Promise<User[]> {
@@ -31,7 +29,6 @@ export class UsersController {
   }
 
   @Get(':id')
-  @UseInterceptors(RefreshTokenInterceptor)
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'The found user.', type: User })
   @ApiResponse({ status: 404, description: 'User not found.' })

@@ -5,9 +5,6 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  // @Prop({ type: String, required: false, unique: true })
-  // id: string;
-
   @Prop({ required: false })
   username: string;
 
@@ -35,12 +32,6 @@ export class User {
   @Prop({ required: false })
   otpExpiresAt: Date;
 
-  @Prop({ required: false })
-  refreshToken: string;
-  
-  @Prop({ required: false })
-  refreshTokenExpiresAt: Date;
-  
   @Prop({ default: Date.now })
   createdAt: Date;
 

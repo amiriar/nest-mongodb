@@ -7,8 +7,14 @@ import {
   Param,
   Delete,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { TodoService } from './todo.service';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
@@ -16,17 +22,16 @@ import { Todo } from './entities/todo.entity';
 import * as dayjs from 'dayjs';
 import * as jalaliday from 'jalaliday';
 import { request } from 'express';
-import { RefreshTokenInterceptor } from 'src/interceptors/Auth.interceptor';
 
 dayjs.extend(jalaliday);
 
 @ApiTags('todos')
 @Controller('todo')
+@ApiBearerAuth()
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
   @Post()
-  @UseInterceptors(RefreshTokenInterceptor)
   @ApiOperation({ summary: 'Create a new todo' })
   @ApiResponse({
     status: 201,
@@ -73,13 +78,11 @@ export class TodoController {
     type: Todo,
   })
   @ApiResponse({ status: 404, description: 'Todo not found' })
-  @UseInterceptors(RefreshTokenInterceptor)
   update(@Param('id') id: string, @Body() updateTodoDto: UpdateTodoDto) {
     return this.todoService.update(id, updateTodoDto);
   }
 
   @Delete(':id')
-  @UseInterceptors(RefreshTokenInterceptor)
   @ApiOperation({ summary: 'Delete a specific todo by ID' })
   @ApiResponse({
     status: 200,

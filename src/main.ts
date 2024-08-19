@@ -9,6 +9,7 @@ async function bootstrap() {
     .setTitle('OTP training API')
     .setDescription('The OTP Training API With MongoDB Documentation Made By Amirreza Abdolrahimi')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

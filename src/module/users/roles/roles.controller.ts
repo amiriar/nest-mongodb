@@ -9,7 +9,7 @@ import { Role } from 'src/otherEntities/role.entity';
 @ApiTags('(Admin Panel) Roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
-
+  
   @Get()
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'SUPERADMIN')

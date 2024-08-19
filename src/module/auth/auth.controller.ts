@@ -23,7 +23,7 @@ import {
 import * as dayjs from 'dayjs';
 import * as jalaliday from 'jalaliday';
 import { UsersService } from '../users/users.service';
-import { RefreshTokenInterceptor } from 'src/interceptors/Auth.interceptor';
+import { JwtService } from '@nestjs/jwt';
 
 dayjs.extend(jalaliday);
 
@@ -32,6 +32,7 @@ dayjs.extend(jalaliday);
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
     private readonly userService: UsersService,
   ) {}
 
@@ -92,24 +93,22 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const lastDateIn = dayjs().calendar('jalali').format('YYYY/MM/DD HH:mm');
+    
     const user = await this.authService.validateUser(phone, code, lastDateIn);
-    const { accessToken, refreshToken } =
-      await this.authService.signToken(user);
+    
+    const { accessToken } = await this.authService.signTokens(user);
 
-    // @ts-ignore
-    await this.authService.saveRefreshToken(user._id, refreshToken);
-
-    // Set the access token as a cookie
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
-      maxAge: 86400000, // 24 hours
+      maxAge: 30 * 60 * 1000, // 30 minutes (matches token expiration)
     });
 
+
+    // Send a success response
     res.status(200).send({ message: 'Login successful' });
   }
 
   @Post('logout')
-  // @UseInterceptors(RefreshTokenInterceptor)
   @HttpCode(200)
   @ApiOperation({ summary: 'Logout the user' })
   @ApiBearerAuth()
@@ -120,7 +119,6 @@ export class AuthController {
   }
 
   @Post('change-pass')
-  @UseInterceptors(RefreshTokenInterceptor)
   @HttpCode(200)
   @ApiOperation({ summary: 'Change user password' })
   @ApiBearerAuth()
@@ -141,15 +139,17 @@ export class AuthController {
     return this.authService.changePassword(oldPassword, newPassword);
   }
 
+
   @Get('whoami')
-  @UseInterceptors(RefreshTokenInterceptor)
-  @HttpCode(200)
-  @ApiOperation({ summary: 'get the user info' })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'users info.' })
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Get the user info' })
+  @ApiResponse({ status: 200, description: 'User info.' })
   async whoami(@Req() req: Request) {
+    // req.user is populated by the guard
     // @ts-ignore
-    const userId = req.user.id;
-    return this.userService.findOne(userId);
+    const user = req.user;
+  
+    return user;
   }
 }
