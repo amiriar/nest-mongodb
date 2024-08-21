@@ -16,7 +16,9 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
-    return this.userModel.findById(id).exec();
+    return this.userModel
+      .findById(id, { __v: 0, createdAt: 0, updatedAt: 0 })
+      .exec();
   }
 
   async findOneByPhone(phone: string): Promise<User> {
@@ -31,9 +33,11 @@ export class UsersService {
     return this.userModel.create({ phoneNumber: phone, madeIn });
   }
 
-  async saveUser(user: User): Promise<User> {
-    // @ts-ignore
-    return this.userModel.findByIdAndUpdate(user._id, user, { new: true }).exec();
+  async saveUser(user: UserDocument): Promise<User> {
+    const userData = await this.userModel
+      .findByIdAndUpdate(user._id, user, { new: true })
+      .exec();
+    return userData;
   }
 
   async deleteUser(id: string): Promise<void> {
@@ -51,7 +55,7 @@ export class UsersService {
 
   async saveOtp(userId: string, otp: string): Promise<Otp> {
     const user = await this.userModel.findById(userId);
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -67,7 +71,7 @@ export class UsersService {
 
     user.otp = otp;
     user.otpExpiresAt = expirationTime;
-  
+
     await user.save();
 
     return newOtp.save();

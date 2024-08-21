@@ -24,8 +24,11 @@ export class AuthService {
     @InjectModel(Role.name) private readonly roleModel: Model<RoleDocument>,
   ) {}
 
-
-  async validateUser(phone: string, code: string, lastDateIn: string): Promise<UserDocument> {
+  async validateUser(
+    phone: string,
+    code: string,
+    lastDateIn: string,
+  ): Promise<UserDocument> {
     const user = await this.userModel.findOne({ phoneNumber: phone });
 
     if (!user) {
@@ -51,12 +54,20 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET_KEY,
-      expiresIn: '1m',
+      expiresIn: '1m', // Access token expiration
     });
 
-    return { accessToken };
-  }
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET_KEY,
+      expiresIn: '7d', // Refresh token expiration
+    });
 
+    // Save the refresh token in the database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return { accessToken, refreshToken };
+  }
   async changePassword(
     oldPassword: string,
     newPassword: string,
@@ -80,4 +91,28 @@ export class AuthService {
     return user; // You might return some success message or the user info
   }
 
+  async clearRefreshToken(userId: string) {
+    await this.userModel.findByIdAndUpdate(userId, { refreshToken: null });
+  }
+
+  async refreshTokens(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET_KEY,
+      });
+      const user = await this.userModel.findById(payload.id);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const newAccessToken = this.jwtService.sign(
+        { id: user._id, role: user.role },
+        { secret: process.env.JWT_SECRET_KEY, expiresIn: '1m' }, // 30 minutes expiry
+      );
+
+      return { accessToken: newAccessToken };
+    } catch (err) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
 }

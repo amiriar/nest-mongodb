@@ -37,6 +37,9 @@ export class User {
 
   @Prop({ default: Date.now })
   updatedAt: Date;
+
+  @Prop({ required: false })
+  refreshToken: string; 
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
